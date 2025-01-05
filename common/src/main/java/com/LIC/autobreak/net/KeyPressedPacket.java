@@ -25,6 +25,7 @@ public class KeyPressedPacket extends BaseC2SMessage {
     }
     @Override
     public void handle(NetworkManager.PacketContext context) {
-        context.queue(() -> AutoBreak.instance.setKeyPressed((ServerPlayer) context.getPlayer()));
+        context.queue(() -> AutoBreak.instance.BreakKeyPressed((ServerPlayer) context.getPlayer()));
+        AutoBreak.LOGGER.info("handled");
     }
 }

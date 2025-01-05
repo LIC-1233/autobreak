@@ -43,9 +43,7 @@ public final class AutoBreak {
     public AutoBreak() {
         instance = this;
 
-        EnvExecutor.getEnvSpecific(() -> AutoBreakClient::new, () -> {
-            return null;
-        });
+        EnvExecutor.getEnvSpecific(() -> AutoBreakClient::new, () -> null);
         AutoBreakNet.init();
         LifecycleEvent.SERVER_BEFORE_START.register(this::serverStarting);
         EntityEvent.ADD.register(this::entityJoinedWorld);
@@ -81,18 +79,19 @@ public final class AutoBreak {
         return EventResult.pass();
     }
 
-    public void setKeyPressed(ServerPlayer player) {
+    public void BreakKeyPressed(ServerPlayer player) {
         try (Level world = player.level()) {
             BlockPos playerPos = player.blockPosition();
             ChunkPos chunkPos = new ChunkPos(playerPos);
             TagKey<Block> tag = TagKey.create(Registries.BLOCK,new ResourceLocation("forge:ores"));
             int startX = chunkPos.x * 16;
             int startZ = chunkPos.z * 16;
+            LOGGER.info("Starting block break at chunk {}", chunkPos);
             isBreakingBlock = true;
             tempBlockDropsList = new ItemCollection();
             tempBlockDroppedXp = 0;
             for (int x = 0; x < 16; x++) {
-                for (int y = 0; y < world.getMaxBuildHeight(); y++) {
+                for (int y = -66; y < world.getMaxBuildHeight(); y++) {
                     for (int z = 0; z < 16; z++) {
                         BlockPos blockPos = new BlockPos(startX + x, y, startZ + z);
                         BlockState blockState = world.getBlockState(blockPos);
@@ -106,11 +105,14 @@ public final class AutoBreak {
                     }
                 }
             }
+            LOGGER.info("Finished block break at chunk {}", chunkPos);
             isBreakingBlock = false;
-            tempBlockDropsList.drop(player.level(), playerPos);
+            tempBlockDropsList.drop(world, playerPos);
+            LOGGER.info("Finished Dropped items");
             if (tempBlockDroppedXp > 0) {
-                player.level().addFreshEntity(new ExperienceOrb(player.level(), playerPos.getX() + 0.5D, playerPos.getY() + 0.5D, playerPos.getZ() + 0.5D, tempBlockDroppedXp));
+                world.addFreshEntity(new ExperienceOrb(world, playerPos.getX() + 0.5D, playerPos.getY() + 0.5D, playerPos.getZ() + 0.5D, tempBlockDroppedXp));
             }
+            LOGGER.info("好Finished Dropped XP");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
